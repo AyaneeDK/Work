@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <title>Interactive 3D Portfolio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body { height: 100%; margin: 0; font-family: Arial, sans-serif; }
+    canvas { display: block; }
+    
+    #info {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      background: rgba(0,0,0,0.8);
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 13px;
+      z-index: 100;
+    }
+    #info p { margin: 3px 0; }
+    
+    .nav-buttons {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 15px;
+      z-index: 100;
+    }
+    
+    .nav-btn {
+      padding: 12px 24px;
+      background: rgba(255,255,255,0.9);
+      border: 2px solid #333;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: all 0.3s;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    
+    .nav-btn:hover {
+      background: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+    }
+    
+    .nav-btn:active {
+      transform: translateY(0);
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/EXRLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+<script>
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
+
+    const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 100);
+    camera.position.set(0, 5, 25);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.shadowMap.enabled = true;
+    renderer.physicallyCorrectLights = true;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x333333, 0.6));
+    const dir = new THREE.DirectionalLight(0xffffff, 3.0);
+    dir.position.set(3, 5, 2);
+    dir.castShadow = true;
+    dir.shadow.mapSize.width = 2048;
+    dir.shadow.mapSize.height = 2048;
+    dir.shadow.camera.left = -20;
+    dir.shadow.camera.right = 20;
+    dir.shadow.camera.top = 20;
+    dir.shadow.camera.bottom = -20;
+    dir.shadow.camera.far = 100;
+    scene.add(dir);
+
+    // Env HDR
+    new THREE.RGBELoader()
+    .setDataType(THREE.UnsignedByteType)
+    .load('https://tywjof-busnaw-fibhy3.github.io/Mesh/syferfontein_1d_clear_puresky_2k.hdr', function(texture) {
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        scene.background = texture;
+        scene.environment = texture;
+    });
+
+    // Picture
+    const textureLoader1 = new THREE.TextureLoader();
+    const uvTexture = textureLoader1.load('https://tywjof-busnaw-fibhy3.github.io/Deco/pic.jpg');
+
+    const texturedPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(7, 7, 32, 32),
+      new THREE.MeshStandardMaterial({
+        map: uvTexture,
+        roughness: 1.0,
+        metalness: 0.0
+      })
+    );
+    texturedPlane.position.set(61, 7, 7);
+    texturedPlane.receiveShadow = true;
+    texturedPlane.castShadow = true;
+    scene.add(texturedPlane);
+
+    // Cell Shading Shader
+    const cellShadingVertexShader = `
+    varying vec3 vNormal;
+    varying vec3 vPosition;
+    varying vec3 vWorldNormal;
+
+    void main() {
+      vPosition = position;
+      vNormal = normalize(normalMatrix * normal);
+      vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+    `;
+
+    const cellShadingFragmentShader = `
+    varying vec3 vNormal;
+    varying vec3 vPosition;
+    varying vec3 vWorldNormal;
+
+    uniform vec3 uColor;
+    uniform vec3 uLightDir;
+
+    void main() {
+      vec3 lightDir = normalize(uLightDir);
+      float diff = dot(vWorldNormal, lightDir);
+      
+      float level = step(0.5, diff);
+      level = mix(0.3, 1.0, level);
+      
+      float edge = length(fwidth(vNormal)) * 2.0;
+      vec3 edgeColor = mix(vec3(0.0), uColor, 1.0 - smoothstep(0.0, 0.01, edge));
+      
+      vec3 finalColor = uColor * level;
+      gl_FragColor = vec4(finalColor, 1.0);
+    }
+    `;
+
+    const cellShaderMaterial = new THREE.ShaderMaterial({
+      vertexShader: cellShadingVertexShader,
+      fragmentShader: cellShadingFragmentShader,
+      uniforms: {
+        uColor: { value: new THREE.Color(0xc5c6d0) },
+        uLightDir: { value: new THREE.Vector3(3, 5, 2).normalize() }
+      }
+    });
+
+    const cellCube = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5, 0.5, 0.5),
+      cellShaderMaterial
+    );
+    cellCube.position.set(4, 3, 25);
+    cellCube.castShadow = true;
+    cellCube.receiveShadow = true;
+    scene.add(cellCube);
+
+    // Vertex Animation Shader
+    const vertexAnimVertexShader = `
+    uniform float uTime;
+    varying vec3 vNormal;
+
+    void main() {
+      vec3 pos = position;
+      
+      pos.y += sin(pos.x * 2.0 + uTime) * 0.1;
+      pos.z += cos(pos.z * 1.5 + uTime * 0.8) * 0.08;
+      pos *= 1.0 + sin(uTime * 2.0) * 0.15;
+      
+      vNormal = normalize(normalMatrix * normal);
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+    }
+    `;
+
+    const vertexAnimFragmentShader = `
+    varying vec3 vNormal;
+    uniform float uTime;
+
+    void main() {
+      vec3 light = normalize(vec3(1.0, 1.0, 1.0));
+      float diff = dot(vNormal, light);
+      
+      vec3 color = vec3(
+        sin(uTime) * 0.5 + 0.5,
+        sin(uTime + 2.0) * 0.5 + 0.5,
+        sin(uTime + 4.0) * 0.5 + 0.5
+      );
+      
+      gl_FragColor = vec4(color * (diff * 0.5 + 0.5), 1.0);
+    }
+    `;
+
+    const vertexAnimMaterial = new THREE.ShaderMaterial({
+      vertexShader: vertexAnimVertexShader,
+      fragmentShader: vertexAnimFragmentShader,
+      uniforms: {
+        uTime: { value: 0 }
+      }
+    });
+
+    const animSphere = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(0.5, 20),
+      vertexAnimMaterial
+    );
+    animSphere.position.set(-8, 5.4, 9.5);
+    animSphere.castShadow = true;
+    animSphere.receiveShadow = true;
+    scene.add(animSphere);
+
+    const animSphere1 = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(0.5, 20),
+      vertexAnimMaterial
+    );
+    animSphere1.position.set(-1, 5.4, 9.5);
+    animSphere1.castShadow = true;
+    animSphere1.receiveShadow = true;
+    scene.add(animSphere1);
+
+    // GLTF Loader
+    const gltfLoader = new THREE.GLTFLoader();
+
+    // Clickable text models
+    let textNameModel, meModel, creditModel, textHomeModel, textHomeCreditModel;
+
+    gltfLoader.load('https://tywjof-busnaw-fibhy3.github.io/AYANEE/japanese_town.glb',
+    (gltf) => {
+      const model = gltf.scene;
+      model.traverse((node) => {
+        if (node.isMesh) {
+          node.castShadow = true;
+          node.receiveShadow = true;
+        }
+      });
+      model.position.set(0, 0.5, 10);
+      scene.add(model);
+    });
+
+    gltfLoader.load('https://tywjof-busnaw-fibhy3.github.io/AYANEE/horror_house.glb',
+    (gltf) => {
+      const model = gltf.scene;
+      model.traverse((node) => {
+        if (node.isMesh) {
+          node.castShadow = true;
+          node.receiveShadow = true;
+        }
+      });
+      model.position.set(6, 0, 0);
+      model.scale.set(5, 5, 5);
+      scene.add(model);
+    });
+
+    gltfLoader.load('https://tywjof-busnaw-fibhy3.github.io/Deco/lowpoly_japanese_old_house.glb',
+    (gltf) => {
+      const model = gltf.scene;
+      model.traverse((node) => {
+        if (node.isMesh) {
+          node.castShadow = true;
+          node.receiveShadow = true;
+        }
+      });
+      model.position.set(38, 1, -20);
+      scene.add(model);
+    });
+
+    gltfLoader.load('https://tywjof-busnaw-fibhy3.github.io/Deco/silent_ash.glb',
+    (gltf) => {
+      const model = gltf.scene;
+      model.traverse((node) => {
+        if (node.isMesh) {
+          node.castShadow = true;
+          node.receiveShadow = true;
+        }
+      });
+      model.position.set(0, 2.5, 10);
+      scene.add(model);
+    });
+
+    gltfLoader.load('https://tywjof-busnaw-fibhy3.github.io/Deco/japanese_house.glb',
+    (gltf) => {
+      const model = gltf.scene;
+      model.traverse((node) => {
+        if (node.isMesh) {
+          node.castShadow = true;
+          node.receiveShadow = true;
+        }
+      });
+      model.position.set(30, 2, -3);
+      scene.add(model);
+    });
+
+    gltfLoader.load('https://tywjof-busnaw-fibhy3.github.io/Deco/dae_final_assignment_milestone_house.glb',
+    (gltf) => {
+      const model = gltf.scene;
+      model.traverse((node) => {
+        if (node.isMesh) {
+          node.castShadow = true;
+          node.receiveShadow = true;
+        }
+      });
+      model.position.set(80, 0.5, 5);
+      scene.add(model);
+    });
+
+    gltfLoader.load('https://tywjof-busnaw-fibhy3.github.io/Deco/state_park_sign.glb',
+    (gltf) => {
+      const model = gltf.scene;
+      model.traverse((node) => {
+        if (node.isMesh) {
+          node.castShadow = true;
+          node.receiveShadow = true;
+        }
+      });
+      model.position.set(50, 7, -5);
+      scene.add(model);
+    });
+
+    gltfLoader.load('https://tywjof-busnaw-fibhy3.github.io/Deco/Textname1.glb',
+    (gltf) => {
+      textNameModel = gltf.scene;
+      textNameModel.position.set(50, 7, 5);
+      textNameModel.rotation.x = Math.PI / 2;
+      textNameModel.userData.clickable = true;
+      textNameModel.userData.targetView = 'textname';
+      scene.add(textNameModel);
+    });
+
+    gltfLoader.load('https://tywjof-busnaw-fibhy3.github.io/Deco/Me.glb',
+    (gltf) => {
+      meModel = gltf.scene;
+      meModel.position.set(0, 5, 10);
+      meModel.rotation.x = Math.PI / 2;
+      meModel.userData.clickable = true;
+      meModel.userData.targetView = 'aboutMe';
+      scene.add(meModel);
+    });
+
+    gltfLoader.load('https://tywjof-busnaw-fibhy3.github.io/Deco/credit.glb',
+    (gltf) => {
+      creditModel = gltf.scene;
+      creditModel.position.set(-6.5, 5, 10);
+      creditModel.rotation.x = Math.PI / 2;
+      creditModel.userData.clickable = true;
+      creditModel.userData.targetView = 'credit';
+      scene.add(creditModel);
+    });
+
+    gltfLoader.load('https://tywjof-busnaw-fibhy3.github.io/Deco/Texthome.glb',
+    (gltf) => {
+    textHomeModel = gltf.scene;
+    textHomeModel.position.set(40, 2, 5);
+    textHomeModel.rotation.x = Math.PI / 2;
+    textHomeModel.userData.clickable = true;
+    textHomeModel.userData.targetView = 'home';
+    scene.add(textHomeModel);
+    });
+
+    gltfLoader.load('https://tywjof-busnaw-fibhy3.github.io/Deco/Texthome.glb',
+    (gltf) => {
+    textHomeCreditModel = gltf.scene;
+    textHomeCreditModel.position.set(3, 5, 26);
+    textHomeCreditModel.rotation.x = Math.PI / 2;
+    textHomeCreditModel.userData.clickable = true;
+    textHomeCreditModel.userData.targetView = 'home';
+    scene.add(textHomeCreditModel);
+    });
+
+    gltfLoader.load('https://tywjof-busnaw-fibhy3.github.io/Deco/dtcr1.glb',
+    (gltf) => {
+    detailCreditModel = gltf.scene;
+    detailCreditModel.position.set(8.9, 7, 25.7);
+    detailCreditModel.rotation.x = Math.PI / 2;
+    detailCreditModel.userData.clickable = true;
+    detailCreditModel.userData.targetView = 'dtcr';
+    scene.add(detailCreditModel);
+    });
+
+    // 3D Picking
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    let selectedObject = null;
+    const pickableObjects = [cellCube, animSphere, texturedPlane];
+
+    // Get all clickable text models
+    function getClickableModels() {
+      const clickable = [];
+      if (textNameModel) {
+        textNameModel.traverse((child) => {
+          if (child.isMesh) clickable.push(child);
+        });
+      }
+      if (meModel) {
+        meModel.traverse((child) => {
+          if (child.isMesh) clickable.push(child);
+        });
+      }
+      if (creditModel) {
+        creditModel.traverse((child) => {
+          if (child.isMesh) clickable.push(child);
+        });
+      }
+      if (textHomeModel) {
+        textHomeModel.traverse((child) => {
+          if (child.isMesh) clickable.push(child);
+        });
+      }
+      if (textHomeCreditModel) {
+        textHomeCreditModel.traverse((child) => {
+          if (child.isMesh) clickable.push(child);
+        });
+      }
+      return clickable;
+    }
+
+    // Click event for desktop
+    window.addEventListener('click', (event) => {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      
+      raycaster.setFromCamera(mouse, camera);
+      
+      // Check text models first
+      const clickableModels = getClickableModels();
+      const textIntersects = raycaster.intersectObjects(clickableModels, false);
+      
+      if (textIntersects.length > 0) {
+        const clicked = textIntersects[0].object;
+        let parentModel = clicked;
+        
+        // Find parent model
+        while (parentModel.parent && !parentModel.userData.clickable) {
+          parentModel = parentModel.parent;
+        }
+        
+        if (parentModel.userData.targetView) {
+          const targetView = parentModel.userData.targetView;
+          currentView = targetView;
+          animateCamera(cameraPositions[targetView].pos, cameraPositions[targetView].target);
+        }
+        return;
+      }
+      
+      // Original picking for other objects
+      const intersects = raycaster.intersectObjects(pickableObjects);
+      
+      if (selectedObject && selectedObject.material.emissive) {
+        selectedObject.material.emissive.setHex(selectedObject.userData.originalEmissive || 0x000000);
+      }
+      
+      if (intersects.length > 0) {
+        selectedObject = intersects[0].object;
+        if (selectedObject.material.emissive) {
+          selectedObject.userData.originalEmissive = selectedObject.material.emissive.getHex();
+          selectedObject.material.emissive.setHex(0x444444);
+        }
+        console.log('Selected:', selectedObject.name || selectedObject.geometry.type);
+      }
+    });
+
+    // Touch event for mobile - เพิ่มส่วนนี้
+    window.addEventListener('touchend', (event) => {
+      if (event.changedTouches.length > 0) {
+        const touch = event.changedTouches[0];
+        mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+        
+        raycaster.setFromCamera(mouse, camera);
+        
+        // Check text models first
+        const clickableModels = getClickableModels();
+        const textIntersects = raycaster.intersectObjects(clickableModels, false);
+        
+        if (textIntersects.length > 0) {
+          const clicked = textIntersects[0].object;
+          let parentModel = clicked;
+          
+          while (parentModel.parent && !parentModel.userData.clickable) {
+            parentModel = parentModel.parent;
+          }
+          
+          if (parentModel.userData.targetView) {
+            const targetView = parentModel.userData.targetView;
+            currentView = targetView;
+            animateCamera(cameraPositions[targetView].pos, cameraPositions[targetView].target);
+          }
+          return;
+        }
+        
+        const intersects = raycaster.intersectObjects(pickableObjects);
+        
+        if (selectedObject && selectedObject.material.emissive) {
+          selectedObject.material.emissive.setHex(selectedObject.userData.originalEmissive || 0x000000);
+        }
+        
+        if (intersects.length > 0) {
+          selectedObject = intersects[0].object;
+          if (selectedObject.material.emissive) {
+            selectedObject.userData.originalEmissive = selectedObject.material.emissive.getHex();
+            selectedObject.material.emissive.setHex(0x444444);
+          }
+          console.log('Selected:', selectedObject.name || selectedObject.geometry.type);
+        }
+      }
+    });
+
+    window.addEventListener('mousemove', (event) => {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      
+      raycaster.setFromCamera(mouse, camera);
+      
+      // Check text models
+      const clickableModels = getClickableModels();
+      const textIntersects = raycaster.intersectObjects(clickableModels, false);
+      
+      if (textIntersects.length > 0) {
+        document.body.style.cursor = 'pointer';
+        return;
+      }
+      
+      // Check other objects
+      const intersects = raycaster.intersectObjects(pickableObjects);
+      document.body.style.cursor = intersects.length > 0 ? 'pointer' : 'auto';
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Camera Positions
+    const cameraPositions = {
+      home: { pos: new THREE.Vector3(0, 5, 25), target: new THREE.Vector3(0, 3, 10) },
+      aboutMe: { pos: new THREE.Vector3(50, 8, 28), target: new THREE.Vector3(50, 7, 20) },
+      textname: { pos: new THREE.Vector3(50, 8, 18), target: new THREE.Vector3(50, 5, 10) },
+      credit: { pos: new THREE.Vector3(7, 4.5, 30), target: new THREE.Vector3(7, 5, 27) }
+    };
+
+    let isAnimating = false;
+    let currentView = 'home';
+
+    function animateCamera(targetPos, targetLookAt, duration = 2000) {
+      if (isAnimating) return;
+      
+      isAnimating = true;
+      controls.enabled = false;
+      
+      const startPos = camera.position.clone();
+      const startTarget = controls.target.clone();
+      const startTime = Date.now();
+      
+      function easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      }
+      
+      function animate() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = easeInOutCubic(progress);
+        
+        camera.position.lerpVectors(startPos, targetPos, eased);
+        controls.target.lerpVectors(startTarget, targetLookAt, eased);
+        controls.update();
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          isAnimating = false;
+          controls.enabled = true;
+        }
+      }
+      
+      animate();
+    }
+
+    // Animation Loop
+    let t = 0;
+    (function loop(){
+      t += 0.01;
+      
+      if (vertexAnimMaterial.uniforms.uTime) {
+        vertexAnimMaterial.uniforms.uTime.value = t;
+      }
+      
+      cellCube.rotation.y += 0.005;
+      dir.position.x = 3 + Math.sin(t * 0.5) * 1.5;
+      
+      if (!isAnimating) {
+        controls.update();
+      }
+      
+      renderer.render(scene, camera);
+      requestAnimationFrame(loop);
+    })();
+
+</script>
+</body>
+</html>
