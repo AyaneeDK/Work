@@ -177,15 +177,38 @@
   @keyframes blink{ 50%{ opacity:0; } }
   .hero-actions{ display:flex; gap:14px; margin-top:34px; flex-wrap:wrap; }
 
-  .waveform{ margin-top:56px; display:flex; align-items:flex-end; gap:4px; height:56px; }
-  .waveform span{
-    width:5px;
-    background:linear-gradient(180deg, var(--cyan), var(--coral));
-    animation:wave 1.8s steps(6) infinite;
-    opacity:0.9;
+  .scan-bar{ margin-top:56px; display:flex; align-items:center; gap:16px; }
+  .scan-bar .tag-label{
+    font-family:var(--pixel); font-size:9.5px; color:var(--muted);
+    white-space:nowrap; letter-spacing:0.03em;
   }
-  @keyframes wave{ 0%,100%{ transform:scaleY(0.3); } 50%{ transform:scaleY(1); } }
-  @media (prefers-reduced-motion: reduce){ .waveform span{ animation:none; } .cursor-blink{ animation:none; } }
+  .scan-track{
+    flex:1; display:flex; gap:3px;
+    padding:5px; border:3px solid var(--line);
+    background:#fff; box-shadow:4px 4px 0 var(--shadow);
+  }
+  .scan-track span{
+    flex:1; height:14px; min-width:3px;
+    background:var(--pink-pale);
+    animation:blip 2.6s ease-in-out infinite;
+  }
+  @keyframes blip{
+    0%,100%{ background:var(--pink-pale); }
+    50%{ background:var(--coral); }
+  }
+  @media (prefers-reduced-motion: reduce){ .scan-track span{ animation:none; } .cursor-blink{ animation:none; } }
+
+  /* ---------- inline bullet lists (education notes, etc.) ---------- */
+  .edu-list{ list-style:none; margin-top:2px; }
+  .edu-list li{
+    position:relative; padding-left:20px; margin-bottom:6px;
+    color:var(--muted); font-size:15px;
+  }
+  .edu-list li:last-child{ margin-bottom:0; }
+  .edu-list li::before{
+    content:"▸"; position:absolute; left:0; top:0;
+    color:var(--coral); font-family:var(--mono); font-weight:700;
+  }
 
   /* ---------- section shell ---------- */
   section{ position:relative; z-index:1; padding:80px 0; border-top:3px dashed var(--line); }
@@ -294,22 +317,58 @@
   }
   @media (max-width:720px){ .skills-grid{ grid-template-columns:1fr; } }
 
+  /* ---------- working style: distinct chip treatment ---------- */
+  .style-list{ display:flex; flex-wrap:wrap; gap:10px; }
+  .style-item{
+    font-size:12.5px; font-family:var(--mono); font-weight:500;
+    padding:8px 14px 8px 30px;
+    position:relative;
+    border:2px solid var(--line);
+    box-shadow:2px 2px 0 var(--shadow);
+    color:var(--ink);
+  }
+  .style-item::before{
+    content:"✦"; position:absolute; left:11px; top:50%;
+    transform:translateY(-50%); font-size:10px; color:var(--ink);
+  }
+  .style-item:nth-child(6n+1){ background:var(--coral); }
+  .style-item:nth-child(6n+2){ background:var(--mint-light); }
+  .style-item:nth-child(6n+3){ background:var(--lavender-light); }
+  .style-item:nth-child(6n+4){ background:var(--butter-light); }
+  .style-item:nth-child(6n+5){ background:var(--blue-light); }
+  .style-item:nth-child(6n+6){ background:var(--pink-pale); }
+
   /* ---------- contact ---------- */
   .contact{ text-align:left; }
   .contact h2{ font-size:clamp(2rem,4vw,3.2rem); max-width:640px; margin-bottom:16px; text-transform:uppercase; }
-  .contact p{ color:var(--muted); max-width:480px; margin-bottom:34px; font-size:16px; font-family:'Inter',sans-serif; }
+  .contact p{ color:var(--muted); max-width:480px; margin-bottom:20px; font-size:16px; font-family:'Inter',sans-serif; }
+  .contact-tags{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:34px; }
   .contact-grid{ display:flex; gap:16px; flex-wrap:wrap; }
   .contact-card{
-    flex:1; min-width:200px;
-    background:var(--panel);
+    flex:1; min-width:260px; max-width:420px;
+    display:flex; align-items:center; gap:16px;
+    background:linear-gradient(135deg, #ffffff, var(--butter-light));
     border:3px solid var(--line);
     box-shadow:5px 5px 0 var(--shadow);
-    padding:20px;
+    padding:20px 22px;
     transition:transform .08s steps(2), box-shadow .08s steps(2);
   }
-  .contact-card:hover{ transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--shadow); }
+  .contact-card:hover{ transform:translate(-3px,-3px); box-shadow:8px 8px 0 var(--shadow); }
+  .contact-icon{
+    flex-shrink:0; width:46px; height:46px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; background:var(--coral);
+    border:2px solid var(--line);
+  }
+  .contact-body{ min-width:0; }
   .contact-card .label{ font-family:var(--pixel); font-size:9.5px; color:var(--cyan); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px; }
-  .contact-card .value{ font-size:14.5px; font-weight:500; font-family:var(--mono); }
+  .contact-card .value{ font-size:14.5px; font-weight:500; font-family:var(--mono); word-break:break-all; }
+  .contact-arrow{
+    margin-left:auto; flex-shrink:0;
+    font-family:var(--pixel); font-size:12px; color:var(--ink);
+    opacity:0.55; transition:transform .12s steps(2);
+  }
+  .contact-card:hover .contact-arrow{ transform:translateX(5px); opacity:1; }
 
   footer{ padding:32px 0; text-align:center; font-size:11px; color:var(--muted); font-family:var(--pixel); border-top:3px solid var(--line); }
 </style>
@@ -343,9 +402,11 @@
         <a class="pixel-btn btn-ghost" href="#contact">▸ Get in touch</a>
       </div>
     </div>
-    <div class="waveform" aria-hidden="true">
-      <script>document.write(Array.from({length:48}).map((_,i)=>`<span style="height:${8+Math.round(Math.abs(Math.sin(i*0.4))*48)}px; animation-delay:${(i*0.05).toFixed(2)}s;"></span>`).join(''));</script>
+    <div class="scan-bar" aria-hidden="true">
+      <span class="tag-label">LVL 99 · READY</span>
+      <div class="scan-track" id="heroScanTrack"></div>
     </div>
+    <script>document.getElementById('heroScanTrack').innerHTML = Array.from({length:36}).map((_,i)=>`<span style="animation-delay:${(i*0.06).toFixed(2)}s;"></span>`).join('');</script>
   </section>
 
   <section id="education">
@@ -359,7 +420,11 @@
           <div class="project-year mono">2023 — PRESENT</div>
           <div class="project-title">Bachelor's Degree in Computer Science</div>
           <span class="project-tag">Kasetsart University, Kamphaeng Saen Campus</span>
-          <p class="project-desc">GPAX 3.66 · Outstanding academic performance scholarship, 2023–2025 · Member of the International Students Club.</p>
+          <ul class="project-desc edu-list">
+            <li>GPAX 3.66</li>
+            <li>Outstanding academic performance scholarship, 2023–2025</li>
+            <li>Member of the International Students Club</li>
+          </ul>
         </div>
       </div>
       <div class="project">
@@ -489,8 +554,8 @@
       </div>
       <div class="skill-card" style="grid-column: 1 / -1;">
         <h3>Working style</h3>
-        <div class="skill-list">
-          <span class="skill-item">Problem Solving<span></span><span class="skill-item">Team Collaboration</span><span class="skill-item">Resilience</span><span class="skill-item">Curiosity</span><span class="skill-item">Continuous Learning</span><span class="skill-item">Critical Thinking</span>
+        <div class="style-list">
+          <span class="style-item">Problem Solving</span><span class="style-item">Team Collaboration</span><span class="style-item">Resilience</span><span class="style-item">Curiosity</span><span class="style-item">Continuous Learning</span><span class="style-item">Critical Thinking</span>
         </div>
       </div>
     </div>
@@ -531,10 +596,19 @@
       <h2 style="margin-bottom:0;">Let's build something.</h2>
     </div>
     <p>Open to internship and collaboration opportunities in software engineering, data science, and applied audio ML.</p>
+    <div class="contact-tags">
+      <span class="pixel-tag">Software Engineering</span>
+      <span class="pixel-tag">Data Science</span>
+      <span class="pixel-tag">Applied Audio ML</span>
+    </div>
     <div class="contact-grid">
       <a class="contact-card" href="mailto:ayanee.d@ku.th.com">
-        <div class="label">Email</div>
-        <div class="value">ayanee.d@ku.th.com</div>
+        <div class="contact-icon" aria-hidden="true">✉</div>
+        <div class="contact-body">
+          <div class="label">Email</div>
+          <div class="value">ayanee.d@ku.th.com</div>
+        </div>
+        <div class="contact-arrow" aria-hidden="true">▸</div>
       </a>
     </div>
   </section>
