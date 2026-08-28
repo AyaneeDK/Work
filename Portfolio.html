@@ -148,7 +148,7 @@
 
   /* ---------- hero (dialogue box) ---------- */
   .hero{ position:relative; z-index:1; padding:72px 0 88px; }
-  .hero-frame{ max-width:760px; }
+  .hero-frame{ max-width:100%; }
   .eyebrow{
     font-family:var(--pixel);
     font-size:10px; letter-spacing:0.08em; text-transform:uppercase;
@@ -239,6 +239,7 @@
   .project:nth-child(3) .project-year{ background:var(--mint-light); }
   .project:nth-child(4) .project-year{ background:var(--lavender-light); }
   .project:nth-child(5) .project-year{ background:var(--coral); }
+  .project:nth-child(6) .project-year{ background:var(--pink-pale); }
   .project-title{ font-size:1.6rem; font-weight:700; margin-bottom:2px; font-family:var(--display); text-transform:uppercase; letter-spacing:0.01em; }
   .project-tag{ font-family:var(--mono); font-size:11.5px; color:var(--cyan); margin-bottom:14px; display:block; }
   .project-desc{ color:var(--muted); font-size:15px; max-width:640px; }
@@ -502,12 +503,38 @@
 
       <div class="project">
         <div>
+          <div class="project-year mono">2025</div>
+          <div class="project-title">3D Interactive Portfolio</div>
+          <span class="project-tag">Introduction to Interactive Computer Graphics</span>
+          <p class="project-desc">Designed and deployed a responsive 3D Interactive Portfolio website utilizing WebGL/3D graphics technologies and version-controlled via GitHub. Implemented advanced rendering techniques including Physically Based Rendering (PBR) materials, Cel Shading characters, real-time vertex shaders, and interactive object picking. Modeled and textured customized 3D assets using Blender while applying geometric transformations, lighting configurations (Phong/Lambert models), and shader optimizations.</p>
+          <div class="project-stack">
+            <span class="pixel-tag">WebGL</span><span class="pixel-tag">3D Graphics</span><span class="pixel-tag">Blender</span><span class="pixel-tag">Shaders</span><span class="pixel-tag">GitHub Pages</span>
+          </div>
+        </div>
+        <a class="project-link" href="https://ayaneedk.github.io/Work/3D_Portfolio.html" target="_blank" rel="noopener noreferrer" aria-label="View live project">VIEW ▸</a>
+      </div>
+
+      <div class="project">
+        <div>
           <div class="project-year mono">2024 — 2025</div>
           <div class="project-title">Registration Database System</div>
           <span class="project-tag">Fundamentals of Database Systems</span>
           <p class="project-desc">Modeled a complete relational database schema using MySQL from user requirements to implementation, optimizing data integrity through normalization and relational data mapping.</p>
           <div class="project-stack">
             <span class="pixel-tag">MySQL</span><span class="pixel-tag">Schema Design</span><span class="pixel-tag">Normalization</span>
+          </div>
+        </div>
+        <a class="project-link" href="#" aria-label="View repository">GO ▸</a>
+      </div>
+
+      <div class="project">
+        <div>
+          <div class="project-year mono">2025</div>
+          <div class="project-title">Pill Shape Verification System</div>
+          <span class="project-tag">Image and Video Processing</span>
+          <p class="project-desc">Built an automated image processing pipeline using MATLAB to detect, segment, and verify pharmaceutical pill shapes for automated quality control simulations.</p>
+          <div class="project-stack">
+            <span class="pixel-tag">MATLAB</span><span class="pixel-tag">Image Processing</span><span class="pixel-tag">Segmentation</span><span class="pixel-tag">Quality Control</span>
           </div>
         </div>
         <a class="project-link" href="#" aria-label="View repository">GO ▸</a>
