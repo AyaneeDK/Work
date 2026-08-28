@@ -148,11 +148,12 @@
 
   /* ---------- hero (dialogue box) ---------- */
   .hero{ position:relative; z-index:1; padding:72px 0 88px; }
-  .hero-frame{ max-width:100%; }
+  .hero-frame{ max-width:100%;
+               text-align:center; }
   .eyebrow{
     font-family:var(--pixel);
     font-size:10px; letter-spacing:0.08em; text-transform:uppercase;
-    color:var(--cyan); margin-bottom:20px;
+    color:var(--butter-light); margin-bottom:20px;
     display:flex; align-items:center; gap:10px;
   }
   .eyebrow .bar{ width:20px; height:3px; background:var(--cyan); }
@@ -166,16 +167,16 @@
     -webkit-background-clip:text; background-clip:text; color:transparent;
   }
   .hero p.sub{
-    margin-top:20px; max-width:560px;
-    font-size:17px; color:var(--muted); font-family:'Inter', sans-serif;
+    margin-top:20px; max-width:800px; margin-left:auto; margin-right:auto;
+    font-size:17px; color:var(--butter-light); font-family:'Inter', sans-serif;
   }
   .cursor-blink{
-    display:inline-block; width:9px; height:1.1em; background:var(--ink);
+    display:inline-block; width:9px; height:1.1em; background:var(--white);
     margin-left:2px; vertical-align:middle;
     animation:blink 1s steps(1) infinite;
   }
   @keyframes blink{ 50%{ opacity:0; } }
-  .hero-actions{ display:flex; gap:14px; margin-top:34px; flex-wrap:wrap; }
+  .hero-actions{ display:flex; gap:14px; margin-top:34px; flex-wrap:wrap; justify-content:center; }
 
   .scan-bar{ margin-top:56px; display:flex; align-items:center; gap:16px; }
   .scan-bar .tag-label{
